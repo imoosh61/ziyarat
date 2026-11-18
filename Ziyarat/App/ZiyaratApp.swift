@@ -11,7 +11,8 @@ struct ZiyaratApp: App {
                 .environmentObject(store)
                 .environment(\.layoutDirection, .rightToLeft)
                 .environment(\.locale, Locale(identifier: "ar"))
-                .tint(store.letterhead.accentColor)
+                .tint(store.theme.accentColor)
+                .preferredColorScheme(store.theme.appearance.colorScheme)
         }
     }
 }
@@ -32,8 +33,8 @@ struct RootView: View {
             LetterheadEditorView()
                 .tabItem { Label("الترويسة", systemImage: "doc.richtext") }
 
-            AboutView()
-                .tabItem { Label("عن التطبيق", systemImage: "info.circle") }
+            SettingsView()
+                .tabItem { Label("الإعدادات", systemImage: "gearshape") }
         }
         .onChange(of: scenePhase) { _, newPhase in
             if newPhase != .active { store.saveNow() }

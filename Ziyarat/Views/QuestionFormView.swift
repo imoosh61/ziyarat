@@ -30,14 +30,22 @@ struct QuestionFormView: View {
     let mode: QuestionFormMode
     let onSave: (Question) -> Void
 
+    @EnvironmentObject private var store: AppStore
     @Environment(\.dismiss) private var dismiss
     @State private var question: Question
     @State private var newOption = ""
+    @State private var savedDefaultsNotice = false
 
-    init(mode: QuestionFormMode, onSave: @escaping (Question) -> Void) {
+    init(
+        mode: QuestionFormMode,
+        defaultOptions: [String] = Question.defaultOptions,
+        onSave: @escaping (Question) -> Void
+    ) {
         self.mode = mode
         self.onSave = onSave
-        _question = State(initialValue: mode.existingQuestion ?? Question())
+        _question = State(
+            initialValue: mode.existingQuestion ?? Question(options: defaultOptions)
+        )
     }
 
     var body: some View {
@@ -136,9 +144,9 @@ struct QuestionFormView: View {
                 .disabled(newOption.isBlank)
             }
 
-            Menu("خيارات جاهزة") {
-                Button("مطبق / مطبق جزئياً / غير مطبق / لا ينطبق") {
-                    question.options = Question.defaultOptions
+            Menu("مجموعات جاهزة") {
+                Button("خياراتي الافتراضية") {
+                    question.options = store.defaultOptions
                 }
                 Button("نعم / لا") {
                     question.options = Question.yesNoOptions
@@ -150,10 +158,21 @@ struct QuestionFormView: View {
                     question.options = ["متوفر", "غير متوفر"]
                 }
             }
+
+            Button {
+                let cleaned = question.options.map(\.trimmed).filter { !$0.isEmpty }
+                guard !cleaned.isEmpty else { return }
+                store.updateDefaultOptions(cleaned)
+                savedDefaultsNotice = true
+            } label: {
+                Label("اعتماد هذه الخيارات لكل سؤال جديد", systemImage: "star")
+            }
         } header: {
             Text("الخيارات")
         } footer: {
-            Text("يمكنك تعديل الخيارات أو ترتيبها أو استخدام مجموعة جاهزة.")
+            Text(savedDefaultsNotice
+                 ? "تم الاعتماد — كل سؤال جديد سيبدأ بهذه الخيارات."
+                 : "اكتب الكلمات التي تناسبك بدل الكلمات الموجودة، أو احذفها وأضف غيرها.")
         }
     }
 

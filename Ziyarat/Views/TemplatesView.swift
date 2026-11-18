@@ -5,6 +5,7 @@ struct TemplatesListView: View {
     @EnvironmentObject private var store: AppStore
     @State private var path: [UUID] = []
     @State private var createdVisitAlert = false
+    @State private var showingDefaultOptions = false
 
     var body: some View {
         NavigationStack(path: $path) {
@@ -54,7 +55,11 @@ struct TemplatesListView: View {
                     }
                 }
                 ToolbarItem(placement: .topBarLeading) {
-                    if !store.templates.isEmpty { EditButton() }
+                    Button {
+                        showingDefaultOptions = true
+                    } label: {
+                        Image(systemName: "slider.horizontal.3")
+                    }
                 }
             }
             .navigationDestination(for: UUID.self) { id in
@@ -64,6 +69,9 @@ struct TemplatesListView: View {
                 Button("حسناً", role: .cancel) {}
             } message: {
                 Text("تجد الزيارة الجديدة في تبويب «الزيارات».")
+            }
+            .sheet(isPresented: $showingDefaultOptions) {
+                DefaultOptionsView().environmentObject(store)
             }
         }
     }
@@ -148,7 +156,10 @@ struct TemplateEditorView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar { ToolbarItem(placement: .topBarTrailing) { EditButton() } }
         .sheet(item: $formMode) { mode in
-            QuestionFormView(mode: mode.asQuestionFormMode) { question in
+            QuestionFormView(
+                mode: mode.asQuestionFormMode,
+                defaultOptions: store.defaultOptions
+            ) { question in
                 var current = template.wrappedValue
                 switch mode {
                 case .create:
@@ -160,6 +171,7 @@ struct TemplateEditorView: View {
                 }
                 template.wrappedValue = current
             }
+            .environmentObject(store)
         }
         .alert("تم إنشاء الزيارة", isPresented: $createdVisitAlert) {
             Button("حسناً", role: .cancel) {}

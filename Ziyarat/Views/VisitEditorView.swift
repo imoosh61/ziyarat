@@ -53,9 +53,10 @@ struct VisitEditorView: View {
             ToolbarItem(placement: .topBarLeading) { EditButton() }
         }
         .sheet(item: $questionFormMode) { mode in
-            QuestionFormView(mode: mode) { question in
+            QuestionFormView(mode: mode, defaultOptions: store.defaultOptions) { question in
                 apply(question: question, mode: mode)
             }
+            .environmentObject(store)
         }
         .sheet(isPresented: $showingPreview) {
             ReportPreviewView(visitID: visitID)

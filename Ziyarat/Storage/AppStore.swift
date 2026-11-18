@@ -9,6 +9,8 @@ final class AppStore: ObservableObject {
     @Published var visits: [Visit] = []
     @Published var templates: [QuestionTemplate] = []
     @Published var letterhead: LetterheadSettings = .default
+    @Published var questionDefaults = QuestionDefaults()
+    @Published var theme: AppTheme = .default
     @Published var logo: UIImage?
     @Published var error: AppError?
 
@@ -19,6 +21,8 @@ final class AppStore: ObservableObject {
         static let visits = "visits.json"
         static let templates = "templates.json"
         static let letterhead = "letterhead.json"
+        static let questionDefaults = "question-defaults.json"
+        static let theme = "app-theme.json"
     }
 
     init() {
@@ -32,6 +36,9 @@ final class AppStore: ObservableObject {
             visits = try storage.load([Visit].self, from: Files.visits) ?? []
             templates = try storage.load([QuestionTemplate].self, from: Files.templates) ?? []
             letterhead = try storage.load(LetterheadSettings.self, from: Files.letterhead) ?? .default
+            questionDefaults = try storage.load(QuestionDefaults.self, from: Files.questionDefaults)
+                ?? QuestionDefaults()
+            theme = try storage.load(AppTheme.self, from: Files.theme) ?? .default
         } catch let appError as AppError {
             error = appError
         } catch {
@@ -57,6 +64,8 @@ final class AppStore: ObservableObject {
             try storage.save(visits, as: Files.visits)
             try storage.save(templates, as: Files.templates)
             try storage.save(letterhead, as: Files.letterhead)
+            try storage.save(questionDefaults, as: Files.questionDefaults)
+            try storage.save(theme, as: Files.theme)
         } catch let appError as AppError {
             error = appError
         } catch {
@@ -284,6 +293,47 @@ final class AppStore: ObservableObject {
         } catch {
             self.error = .photo(error.localizedDescription)
         }
+    }
+
+    // MARK: - ألوان التطبيق
+
+    func updateTheme(_ new: AppTheme) {
+        theme = new
+        scheduleSave()
+    }
+
+    var themeBinding: Binding<AppTheme> {
+        Binding(
+            get: { [weak self] in self?.theme ?? .default },
+            set: { [weak self] new in self?.updateTheme(new) }
+        )
+    }
+
+    /// استخدام لون التطبيق نفسه في ورقة التقرير.
+    func applyThemeColorToReport() {
+        var current = letterhead
+        current.accentColorHex = theme.accentHex
+        updateLetterhead(current)
+    }
+
+    // MARK: - الخيارات الافتراضية للأسئلة
+
+    /// الخيارات التي يبدأ بها كل سؤال جديد (بكلمات المستخدم).
+    var defaultOptions: [String] {
+        let cleaned = questionDefaults.options.map(\.trimmed).filter { !$0.isEmpty }
+        return cleaned.isEmpty ? Question.defaultOptions : cleaned
+    }
+
+    func updateDefaultOptions(_ options: [String]) {
+        questionDefaults.options = options
+        scheduleSave()
+    }
+
+    var defaultOptionsBinding: Binding<[String]> {
+        Binding(
+            get: { [weak self] in self?.questionDefaults.options ?? Question.defaultOptions },
+            set: { [weak self] new in self?.updateDefaultOptions(new) }
+        )
     }
 
     func resetLetterhead() {

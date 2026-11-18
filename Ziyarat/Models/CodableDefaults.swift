@@ -133,6 +133,35 @@ extension QuestionTemplate {
     }
 }
 
+// MARK: - QuestionDefaults
+
+extension QuestionDefaults {
+    enum CodingKeys: String, CodingKey {
+        case options
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.init(options: container.value(.options, Question.defaultOptions))
+    }
+}
+
+// MARK: - AppTheme
+
+extension AppTheme {
+    enum CodingKeys: String, CodingKey {
+        case accentHex, appearance
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let fallback = AppTheme()
+        self.init()
+        accentHex = container.value(.accentHex, fallback.accentHex)
+        appearance = container.value(.appearance, fallback.appearance)
+    }
+}
+
 // MARK: - LetterheadSettings
 
 extension LetterheadSettings {

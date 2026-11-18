@@ -91,6 +91,15 @@ struct Visit: Identifiable, Codable, Hashable {
     }
 }
 
+/// الخيارات الافتراضية التي يبدأ بها كل سؤال جديد — يحددها المستخدم بكلماته.
+struct QuestionDefaults: Codable, Hashable {
+    var options: [String]
+
+    init(options: [String] = Question.defaultOptions) {
+        self.options = options
+    }
+}
+
 /// نموذج أسئلة جاهز يُعاد استخدامه في كل زيارة.
 struct QuestionTemplate: Identifiable, Codable, Hashable {
     var id: UUID
