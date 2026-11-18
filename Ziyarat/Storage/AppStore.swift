@@ -251,8 +251,10 @@ final class AppStore: ObservableObject {
         if let image {
             let resized = image.downscaled(maxDimension: 800)
             do {
-                try storage.saveLogo(resized)
-                logo = resized
+                try storage.saveOriginalLogo(resized)
+                let processed = processedLogo(from: resized)
+                try storage.saveLogo(processed)
+                logo = processed
             } catch let appError as AppError {
                 error = appError
             } catch {
@@ -260,9 +262,30 @@ final class AppStore: ObservableObject {
             }
         } else {
             storage.deleteLogo()
+            storage.deleteOriginalLogo()
             logo = nil
         }
         scheduleSave()
+    }
+
+    /// تطبيق تفريغ الخلفية البيضاء حسب الإعدادات الحالية.
+    private func processedLogo(from image: UIImage) -> UIImage {
+        guard letterhead.logoRemoveWhite else { return image }
+        return image.removingLightBackground(threshold: letterhead.logoWhiteThreshold) ?? image
+    }
+
+    /// إعادة معالجة الشعار من نسخته الأصلية بعد تغيير إعدادات التفريغ.
+    func reprocessLogo() {
+        guard let original = storage.loadOriginalLogo() ?? storage.loadLogo() else { return }
+        let processed = processedLogo(from: original)
+        do {
+            try storage.saveLogo(processed)
+            logo = processed
+        } catch let appError as AppError {
+            error = appError
+        } catch {
+            self.error = .photo(error.localizedDescription)
+        }
     }
 
     func resetLetterhead() {

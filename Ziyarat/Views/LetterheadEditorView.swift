@@ -208,6 +208,38 @@ struct LetterheadEditorView: View {
                 Spacer(minLength: 0)
             }
 
+            Toggle(
+                "تفريغ خلفية الشعار البيضاء",
+                isOn: Binding(
+                    get: { settings.wrappedValue.logoRemoveWhite },
+                    set: { newValue in
+                        var current = settings.wrappedValue
+                        current.logoRemoveWhite = newValue
+                        settings.wrappedValue = current
+                        store.reprocessLogo()
+                    }
+                )
+            )
+
+            if settings.wrappedValue.logoRemoveWhite {
+                VStack(alignment: .trailing, spacing: 2) {
+                    HStack {
+                        Text("درجة التفريغ")
+                        Spacer()
+                        Text(String(format: "%.0f%%", settings.wrappedValue.logoWhiteThreshold * 100))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    Slider(
+                        value: settings.logoWhiteThreshold,
+                        in: 0.60...0.99,
+                        onEditingChanged: { editing in
+                            if !editing { store.reprocessLogo() }
+                        }
+                    )
+                }
+            }
+
             slider(
                 title: "حجم الشعار",
                 value: settings.logoWidth,
@@ -236,7 +268,7 @@ struct LetterheadEditorView: View {
         } header: {
             Text("الشعار")
         } footer: {
-            Text("استخدم صورة PNG بخلفية شفافة لأفضل نتيجة في الطباعة.")
+            Text("عند رفع الشعار تُفرَّغ خلفيته البيضاء تلقائياً. إذا اختفت أجزاء فاتحة من الشعار قلّل «درجة التفريغ»، وإذا بقيت خلفية رمادية زِدها. يمكنك إيقاف التفريغ إذا كان الشعار PNG شفافاً أصلاً.")
         }
     }
 

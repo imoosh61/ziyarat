@@ -86,6 +86,9 @@ struct LetterheadSettings: Codable, Hashable {
     var logoOffsetX: Double = 0
     var logoOffsetY: Double = 0
     var logoOpacity: Double = 1.0
+    /// تفريغ الخلفية البيضاء من الشعار تلقائياً عند رفعه.
+    var logoRemoveWhite: Bool = true
+    var logoWhiteThreshold: Double = 0.90
 
     // MARK: الخطوط
     var headerFontName: String = ""   // "" = خط النظام

@@ -39,6 +39,11 @@ struct FileStorage {
         documents.appendingPathComponent("letterhead-logo.png")
     }
 
+    /// نسخة الشعار الأصلية كما رفعها المستخدم — تُستخدم لإعادة المعالجة عند تغيير إعدادات التفريغ.
+    var originalLogoURL: URL {
+        documents.appendingPathComponent("letterhead-logo-original.png")
+    }
+
     private init() {
         try? fm.createDirectory(at: photosDirectory, withIntermediateDirectories: true)
     }
@@ -100,6 +105,27 @@ struct FileStorage {
 
     func deleteLogo() {
         try? fm.removeItem(at: logoURL)
+    }
+
+    func saveOriginalLogo(_ image: UIImage) throws {
+        guard let data = image.pngData() else {
+            throw AppError.photo("تنسيق الشعار غير مدعوم")
+        }
+        do {
+            try data.write(to: originalLogoURL, options: .atomic)
+        } catch {
+            throw AppError.save(error.localizedDescription)
+        }
+    }
+
+    func loadOriginalLogo() -> UIImage? {
+        guard fm.fileExists(atPath: originalLogoURL.path),
+              let data = try? Data(contentsOf: originalLogoURL) else { return nil }
+        return UIImage(data: data)
+    }
+
+    func deleteOriginalLogo() {
+        try? fm.removeItem(at: originalLogoURL)
     }
 
     // MARK: - صور الأسئلة

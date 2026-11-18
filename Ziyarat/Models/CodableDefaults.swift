@@ -145,6 +145,7 @@ extension LetterheadSettings {
         case showExtraLine, extraLine
         case showLeftLines, leftLines
         case showLogo, logoWidth, logoOffsetX, logoOffsetY, logoOpacity
+        case logoRemoveWhite, logoWhiteThreshold
         case headerFontName, bodyFontName
         case kingdomFontSize, ministryFontSize, administrationFontSize, sectionFontSize
         case titleFontSize, bodyFontSize, headerBold
@@ -184,6 +185,8 @@ extension LetterheadSettings {
         logoOffsetX = container.value(.logoOffsetX, fallback.logoOffsetX)
         logoOffsetY = container.value(.logoOffsetY, fallback.logoOffsetY)
         logoOpacity = container.value(.logoOpacity, fallback.logoOpacity)
+        logoRemoveWhite = container.value(.logoRemoveWhite, fallback.logoRemoveWhite)
+        logoWhiteThreshold = container.value(.logoWhiteThreshold, fallback.logoWhiteThreshold)
 
         headerFontName = container.value(.headerFontName, fallback.headerFontName)
         bodyFontName = container.value(.bodyFontName, fallback.bodyFontName)
