@@ -1,0 +1,94 @@
+name: Build iOS IPA
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ios-build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build unsigned IPA
+    runs-on: macos-15
+    timeout-minutes: 40
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Show Xcode version
+        run: xcodebuild -version
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        run: xcodegen generate
+
+      - name: Read version
+        id: ver
+        run: |
+          V=$(grep -m1 'MARKETING_VERSION' project.yml | sed 's/.*"\(.*\)".*/\1/')
+          echo "version=$V" >> "$GITHUB_OUTPUT"
+          echo "App version: $V"
+
+      - name: Build archive (unsigned)
+        run: |
+          set -o pipefail
+          xcodebuild archive \
+            -project Ziyarat.xcodeproj \
+            -scheme Ziyarat \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -archivePath build/Ziyarat.xcarchive \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGN_ENTITLEMENTS="" \
+            | xcpretty || xcodebuild archive \
+            -project Ziyarat.xcodeproj \
+            -scheme Ziyarat \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -archivePath build/Ziyarat.xcarchive \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: Package IPA
+        run: |
+          set -e
+          APP_PATH="build/Ziyarat.xcarchive/Products/Applications/Ziyarat.app"
+          test -d "$APP_PATH" || { echo "App not found"; ls -R build/Ziyarat.xcarchive/Products || true; exit 1; }
+          rm -rf build/Payload
+          mkdir -p build/Payload
+          cp -R "$APP_PATH" build/Payload/
+          cd build
+          zip -qry "Ziyarat-${{ steps.ver.outputs.version }}.ipa" Payload
+          ls -lh *.ipa
+
+      - name: Upload IPA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Ziyarat-${{ steps.ver.outputs.version }}-ipa
+          path: build/*.ipa
+          retention-days: 30
+          if-no-files-found: error
+
+      - name: Create GitHub Release (tags only)
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" build/*.ipa \
+            --title "زياراتي ${GITHUB_REF_NAME}" \
+            --notes "نسخة ${{ steps.ver.outputs.version }} — ملف IPA غير موقّع للتثبيت عبر أدوات التثبيت الجانبي (Sideloadly / AltStore)."

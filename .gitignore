@@ -1,0 +1,24 @@
+## Xcode
+*.xcodeproj/
+*.xcworkspace/
+!*.xcodeproj/project.pbxproj
+build/
+DerivedData/
+*.xcarchive
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+## User settings
+xcuserdata/
+*.xcuserstate
+*.moved-aside
+
+## macOS
+.DS_Store
+
+## SwiftPM
+.swiftpm/
+.build/
+Packages/
+Package.resolved
