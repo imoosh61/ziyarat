@@ -8,7 +8,7 @@ struct QuestionCardView: View {
     let onEditQuestion: () -> Void
 
     var body: some View {
-        VStack(alignment: .trailing, spacing: 10) {
+        VStack(alignment: .leading, spacing: 10) {
             header
             answerControls
 
@@ -33,11 +33,11 @@ struct QuestionCardView: View {
 
     private var header: some View {
         HStack(alignment: .top, spacing: 8) {
-            VStack(alignment: .trailing, spacing: 3) {
+            VStack(alignment: .leading, spacing: 3) {
                 Text(item.question.text.isBlank ? "سؤال بدون نص" : item.question.text)
                     .font(.body.weight(.semibold))
-                    .multilineTextAlignment(.trailing)
-                    .frame(maxWidth: .infinity, alignment: .trailing)
+                    .multilineTextAlignment(.leading)
+                    .frame(maxWidth: .infinity, alignment: .leading)
 
                 HStack(spacing: 5) {
                     Image(systemName: item.question.kind.icon)
@@ -82,7 +82,7 @@ struct QuestionCardView: View {
     private func optionsGrid(multiple: Bool) -> some View {
         LazyVGrid(
             columns: [GridItem(.adaptive(minimum: 96), spacing: 8)],
-            alignment: .trailing,
+            alignment: .leading,
             spacing: 8
         ) {
             ForEach(item.question.options, id: \.self) { option in

@@ -137,7 +137,10 @@ struct ReportContentBuilder {
             rows.append(MetaRow(label: "نوع الزيارة", value: visit.visitKind))
         }
         rows.append(MetaRow(label: "اليوم", value: ArabicDate.dayName(visit.date)))
-        rows.append(MetaRow(label: "التاريخ", value: ArabicDate.formatted(visit.date, style: visit.dateStyle)))
+        // التاريخ يظهر أعلى يسار الورقة عند تفعيله في الترويسة، فلا يتكرر هنا
+        if !letterhead.showHeaderDate {
+            rows.append(MetaRow(label: "التاريخ", value: ArabicDate.formatted(visit.date, style: visit.dateStyle)))
+        }
         if visit.showTime {
             rows.append(MetaRow(label: "الوقت", value: ArabicDate.time(visit.date)))
         }

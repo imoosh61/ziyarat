@@ -22,14 +22,14 @@ struct TemplatesListView: View {
                     List {
                         ForEach(store.templates) { template in
                             NavigationLink(value: template.id) {
-                                VStack(alignment: .trailing, spacing: 3) {
+                                VStack(alignment: .leading, spacing: 3) {
                                     Text(template.name.isBlank ? "نموذج بدون اسم" : template.name)
                                         .font(.headline)
                                     Text("\(template.questions.count) سؤال")
                                         .font(.caption)
                                         .foregroundStyle(.secondary)
                                 }
-                                .frame(maxWidth: .infinity, alignment: .trailing)
+                                .frame(maxWidth: .infinity, alignment: .leading)
                             }
                             .contextMenu {
                                 Button {
@@ -103,9 +103,9 @@ struct TemplateEditorView: View {
                     Button {
                         formMode = .edit(question: question)
                     } label: {
-                        VStack(alignment: .trailing, spacing: 3) {
+                        VStack(alignment: .leading, spacing: 3) {
                             Text(question.text.isBlank ? "سؤال بدون نص" : question.text)
-                                .multilineTextAlignment(.trailing)
+                                .multilineTextAlignment(.leading)
                                 .foregroundStyle(.primary)
                             HStack(spacing: 4) {
                                 Image(systemName: question.kind.icon)
@@ -114,7 +114,7 @@ struct TemplateEditorView: View {
                             .font(.caption2)
                             .foregroundStyle(.secondary)
                         }
-                        .frame(maxWidth: .infinity, alignment: .trailing)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     }
                 }
                 .onDelete { offsets in

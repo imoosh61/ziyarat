@@ -64,7 +64,7 @@ struct AboutView: View {
                 .padding(.top, 3)
             Text(text)
                 .font(.footnote)
-                .multilineTextAlignment(.trailing)
+                .multilineTextAlignment(.leading)
             Spacer(minLength: 0)
         }
     }

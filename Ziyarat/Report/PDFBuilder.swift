@@ -19,7 +19,12 @@ enum PDFBuilder {
         images: [UUID: UIImage]
     ) -> [[ReportBlock]] {
         let blocks = ReportContentBuilder(visit: visit, letterhead: letterhead).build()
-        let engine = ReportLayoutEngine(letterhead: letterhead, logo: logo, images: images)
+        let engine = ReportLayoutEngine(
+            letterhead: letterhead,
+            logo: logo,
+            images: images,
+            headerInfo: HeaderInfo.make(visit: visit, letterhead: letterhead)
+        )
         return engine.paginate(blocks)
     }
 
@@ -51,6 +56,7 @@ enum PDFBuilder {
         }
 
         let total = pageBlocks.count
+        let headerInfo = HeaderInfo.make(visit: visit, letterhead: letterhead)
 
         for (index, blocks) in pageBlocks.enumerated() {
             let page = ReportPageView(
@@ -58,6 +64,7 @@ enum PDFBuilder {
                 letterhead: letterhead,
                 logo: logo,
                 images: images,
+                headerInfo: headerInfo,
                 pageIndex: index,
                 pageCount: total
             )

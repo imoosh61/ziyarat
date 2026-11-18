@@ -32,6 +32,7 @@ struct ReportLayoutEngine {
     let letterhead: LetterheadSettings
     let logo: UIImage?
     let images: [UUID: UIImage]
+    let headerInfo: HeaderInfo
 
     private var geometry: ReportGeometry { ReportGeometry(letterhead: letterhead) }
 
@@ -40,6 +41,7 @@ struct ReportLayoutEngine {
         let view = LetterheadView(
             letterhead: letterhead,
             logo: logo,
+            info: headerInfo,
             width: geometry.contentWidth
         )
         return Self.measure(view, width: geometry.contentWidth)
@@ -126,6 +128,7 @@ struct ReportPageView: View {
     let letterhead: LetterheadSettings
     let logo: UIImage?
     let images: [UUID: UIImage]
+    let headerInfo: HeaderInfo
     let pageIndex: Int
     let pageCount: Int
 
@@ -146,11 +149,12 @@ struct ReportPageView: View {
                     LetterheadView(
                         letterhead: letterhead,
                         logo: logo,
+                        info: headerInfo,
                         width: geometry.contentWidth
                     )
                 }
 
-                VStack(alignment: .trailing, spacing: geometry.blockSpacing) {
+                VStack(alignment: .leading, spacing: geometry.blockSpacing) {
                     ForEach(Array(blocks.enumerated()), id: \.offset) { _, block in
                         ReportBlockView(
                             block: block,

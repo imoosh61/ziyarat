@@ -18,7 +18,7 @@ struct PhotoAttachRow: View {
     @State private var isImporting = false
 
     var body: some View {
-        VStack(alignment: .trailing, spacing: 8) {
+        VStack(alignment: .leading, spacing: 8) {
             if !photos.isEmpty {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 10) {

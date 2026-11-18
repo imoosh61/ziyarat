@@ -24,6 +24,7 @@ struct LetterheadEditorView: View {
                 }
 
                 layoutSection
+                headerSideSection
                 textsSection
                 logoSection
                 fontsSection
@@ -70,6 +71,43 @@ struct LetterheadEditorView: View {
             .labelsHidden()
 
             Toggle("تكرار الترويسة في كل صفحة", isOn: settings.repeatHeaderOnAllPages)
+
+            Picker("مكان نصوص الترويسة", selection: settings.headerAlignment) {
+                ForEach(HeaderTextAlignment.allCases) { alignment in
+                    Text(alignment.title).tag(alignment)
+                }
+            }
+            .pickerStyle(.segmented)
+
+            slider(title: "تحريك الترويسة أفقياً", value: settings.headerOffsetX, range: -80...80, unit: "نقطة")
+            slider(title: "تحريك الترويسة رأسياً", value: settings.headerOffsetY, range: -30...50, unit: "نقطة")
+        }
+    }
+
+    // MARK: - أعلى يسار الصفحة
+
+    private var headerSideSection: some View {
+        Section {
+            Toggle("إظهار التاريخ أعلى يسار الصفحة", isOn: settings.showHeaderDate)
+            if settings.wrappedValue.showHeaderDate {
+                TextField("نص التاريخ", text: settings.headerDateLabel)
+            }
+
+            Toggle("إظهار الرقم", isOn: settings.showHeaderNumber)
+            if settings.wrappedValue.showHeaderNumber {
+                TextField("نص الرقم", text: settings.headerNumberLabel)
+                TextField("قيمة الرقم (اختياري)", text: settings.headerNumberValue)
+            }
+
+            Toggle("إظهار المشفوعات", isOn: settings.showHeaderAttachments)
+            if settings.wrappedValue.showHeaderAttachments {
+                TextField("نص المشفوعات", text: settings.headerAttachmentsLabel)
+                TextField("قيمة المشفوعات (اختياري)", text: settings.headerAttachmentsValue)
+            }
+        } header: {
+            Text("التاريخ والرقم (أعلى اليسار)")
+        } footer: {
+            Text("التاريخ يُعبّأ تلقائياً من تاريخ الزيارة (هجري/ميلادي حسب اختيارك في الزيارة)، ولا يتكرر في جدول البيانات.")
         }
     }
 
@@ -161,7 +199,7 @@ struct LetterheadEditorView: View {
         text: Binding<String>,
         placeholder: String
     ) -> some View {
-        VStack(alignment: .trailing, spacing: 6) {
+        VStack(alignment: .leading, spacing: 6) {
             Toggle(title, isOn: isOn)
             if isOn.wrappedValue {
                 TextField(placeholder, text: text)
@@ -191,7 +229,7 @@ struct LetterheadEditorView: View {
                         .overlay(Image(systemName: "photo").foregroundStyle(.secondary))
                 }
 
-                VStack(alignment: .trailing, spacing: 8) {
+                VStack(alignment: .leading, spacing: 8) {
                     PhotosPicker(selection: $logoItem, matching: .images) {
                         Label(store.logo == nil ? "اختيار شعار" : "تغيير الشعار", systemImage: "photo.badge.plus")
                     }
@@ -222,7 +260,7 @@ struct LetterheadEditorView: View {
             )
 
             if settings.wrappedValue.logoRemoveWhite {
-                VStack(alignment: .trailing, spacing: 2) {
+                VStack(alignment: .leading, spacing: 2) {
                     HStack {
                         Text("درجة التفريغ")
                         Spacer()
@@ -392,7 +430,7 @@ struct LetterheadEditorView: View {
         unit: String = "",
         decimals: Int = 0
     ) -> some View {
-        VStack(alignment: .trailing, spacing: 2) {
+        VStack(alignment: .leading, spacing: 2) {
             HStack {
                 Text(title)
                 Spacer()
@@ -437,11 +475,13 @@ struct A4LivePreview: View {
             .overlay {
                 GeometryReader { geo in
                     let scale = geo.size.width / A4.width
+                    let visit = Self.sampleVisit
                     ReportPageView(
-                        blocks: Self.sampleBlocks(letterhead: letterhead),
+                        blocks: ReportContentBuilder(visit: visit, letterhead: letterhead).build(),
                         letterhead: letterhead,
                         logo: logo,
                         images: [:],
+                        headerInfo: HeaderInfo.make(visit: visit, letterhead: letterhead),
                         pageIndex: 0,
                         pageCount: 1
                     )
@@ -458,7 +498,7 @@ struct A4LivePreview: View {
             .shadow(color: .black.opacity(0.12), radius: 3, y: 1)
     }
 
-    static func sampleBlocks(letterhead: LetterheadSettings) -> [ReportBlock] {
+    static var sampleVisit: Visit {
         var sample = Visit(
             title: "تقرير زيارة إشرافية",
             entity: "مكتب التعليم — نموذج معاينة",
@@ -477,6 +517,6 @@ struct A4LivePreview: View {
                 answer: Answer(text: "تم الاطلاع على السجلات ووُجدت محدّثة.")
             )
         ]
-        return ReportContentBuilder(visit: sample, letterhead: letterhead).build()
+        return sample
     }
 }

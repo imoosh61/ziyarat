@@ -112,10 +112,10 @@ struct VisitRow: View {
     let visit: Visit
 
     var body: some View {
-        VStack(alignment: .trailing, spacing: 4) {
+        VStack(alignment: .leading, spacing: 4) {
             Text(visit.title.isBlank ? "تقرير بدون عنوان" : visit.title)
                 .font(.headline)
-                .multilineTextAlignment(.trailing)
+                .multilineTextAlignment(.leading)
 
             Text(visit.subtitleLine)
                 .font(.subheadline)
@@ -133,7 +133,7 @@ struct VisitRow: View {
             .font(.caption)
             .foregroundStyle(.secondary)
         }
-        .frame(maxWidth: .infinity, alignment: .trailing)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.vertical, 2)
     }
 

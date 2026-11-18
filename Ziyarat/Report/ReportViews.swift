@@ -1,18 +1,59 @@
 import SwiftUI
 import UIKit
 
+// ملاحظة مهمة: الورقة تُرسم باتجاه RTL، لذلك:
+//   .leading  = يمين الصفحة
+//   .trailing = يسار الصفحة
+
+/// بيانات الترويسة المتغيّرة حسب الزيارة (التاريخ والرقم والمشفوعات).
+struct HeaderInfo: Hashable {
+    var dateLines: [String] = []
+    var number: String = ""
+    var attachments: String = ""
+
+    var isEmpty: Bool {
+        dateLines.isEmpty && number.isBlank && attachments.isBlank
+    }
+
+    static func make(visit: Visit, letterhead: LetterheadSettings) -> HeaderInfo {
+        var info = HeaderInfo()
+
+        if letterhead.showHeaderDate {
+            switch visit.dateStyle {
+            case .hijri:
+                info.dateLines = [ArabicDate.hijri(visit.date)]
+            case .gregorian:
+                info.dateLines = [ArabicDate.gregorian(visit.date)]
+            case .both:
+                info.dateLines = [ArabicDate.hijri(visit.date), ArabicDate.gregorian(visit.date)]
+            }
+        }
+
+        if letterhead.showHeaderNumber {
+            info.number = letterhead.headerNumberValue
+        }
+        if letterhead.showHeaderAttachments {
+            info.attachments = letterhead.headerAttachmentsValue
+        }
+        return info
+    }
+
+    static let preview = HeaderInfo(dateLines: ["١٤٤٨/٠٦/٠٨ هـ", "٢٠٢٦/١١/١٨ م"])
+}
+
 // MARK: - الترويسة الرسمية
 
 struct LetterheadView: View {
 
     let letterhead: LetterheadSettings
     let logo: UIImage?
+    let info: HeaderInfo
     let width: CGFloat
 
     var body: some View {
         VStack(spacing: 8) {
             layoutContent
-                .frame(width: width, alignment: .center)
+                .frame(width: width, alignment: .top)
 
             if letterhead.showDivider {
                 Rectangle()
@@ -26,37 +67,52 @@ struct LetterheadView: View {
         .padding(.bottom, letterhead.headerBottomSpacing)
     }
 
+    // MARK: التوزيع
+
     @ViewBuilder
     private var layoutContent: some View {
         switch letterhead.layout {
         case .threeColumns:
-            HStack(alignment: .top, spacing: 10) {
-                textColumn(alignment: .trailing)
-                    .frame(maxWidth: .infinity, alignment: .trailing)
+            HStack(alignment: .top, spacing: 8) {
+                textBlock
+                    .frame(maxWidth: .infinity, alignment: blockFrameAlignment)
                 logoView
-                leftColumn
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                infoColumn
+                    .frame(maxWidth: .infinity, alignment: .trailing)
             }
+
         case .logoTopCenter:
-            VStack(spacing: 6) {
-                logoView
-                textColumn(alignment: .center)
-                    .frame(maxWidth: .infinity, alignment: .center)
+            HStack(alignment: .top, spacing: 8) {
+                VStack(alignment: stackAlignment, spacing: 6) {
+                    logoView
+                    textBlock
+                }
+                .frame(maxWidth: .infinity, alignment: blockFrameAlignment)
+
+                if !infoIsEmpty {
+                    infoColumn
+                }
             }
+
         case .logoRight:
-            HStack(alignment: .center, spacing: 12) {
+            HStack(alignment: .top, spacing: 12) {
                 logoView
-                textColumn(alignment: .trailing)
-                    .frame(maxWidth: .infinity, alignment: .trailing)
+                textBlock
+                Spacer(minLength: 0)
+                if !infoIsEmpty { infoColumn }
             }
+
         case .logoLeft:
-            HStack(alignment: .center, spacing: 12) {
-                textColumn(alignment: .trailing)
-                    .frame(maxWidth: .infinity, alignment: .trailing)
+            HStack(alignment: .top, spacing: 12) {
+                textBlock
+                    .frame(maxWidth: .infinity, alignment: blockFrameAlignment)
+                if !infoIsEmpty { infoColumn }
                 logoView
             }
         }
     }
+
+    // MARK: العناصر
 
     @ViewBuilder
     private var logoView: some View {
@@ -68,14 +124,13 @@ struct LetterheadView: View {
                 .opacity(letterhead.logoOpacity)
                 .offset(x: letterhead.logoOffsetX, y: letterhead.logoOffsetY)
         } else if letterhead.showLogo {
-            // مساحة محفوظة للشعار حتى يبقى التوزيع ثابتاً قبل إضافته
             Color.clear
                 .frame(width: letterhead.logoWidth, height: letterhead.logoWidth)
         }
     }
 
-    private func textColumn(alignment: HorizontalAlignment) -> some View {
-        VStack(alignment: alignment, spacing: 2) {
+    private var textBlock: some View {
+        VStack(alignment: stackAlignment, spacing: 2) {
             if letterhead.showKingdomLine, !letterhead.kingdomLine.isBlank {
                 headerText(letterhead.kingdomLine, size: letterhead.kingdomFontSize)
             }
@@ -92,22 +147,42 @@ struct LetterheadView: View {
                 headerText(letterhead.extraLine, size: letterhead.sectionFontSize)
             }
         }
-        .multilineTextAlignment(textAlignment(for: alignment))
+        .multilineTextAlignment(textAlignment)
+        .offset(x: letterhead.headerOffsetX, y: letterhead.headerOffsetY)
     }
 
-    @ViewBuilder
-    private var leftColumn: some View {
-        if letterhead.showLeftLines {
-            VStack(alignment: .leading, spacing: 3) {
-                ForEach(Array(letterhead.leftLines.enumerated()), id: \.offset) { _, line in
-                    if !line.isBlank {
-                        headerText(line, size: letterhead.sectionFontSize)
-                    }
+    /// العمود الأيسر: التاريخ والرقم والمشفوعات وأي أسطر يكتبها المستخدم.
+    private var infoColumn: some View {
+        VStack(alignment: .trailing, spacing: 3) {
+            if letterhead.showHeaderNumber {
+                infoText(line(label: letterhead.headerNumberLabel, value: info.number))
+            }
+            if !info.dateLines.isEmpty {
+                infoText(line(label: letterhead.headerDateLabel, value: info.dateLines[0]))
+                if info.dateLines.count > 1 {
+                    infoText(line(label: "الموافق:", value: info.dateLines[1]))
                 }
             }
-        } else {
-            Color.clear.frame(width: 1, height: 1)
+            if letterhead.showHeaderAttachments {
+                infoText(line(label: letterhead.headerAttachmentsLabel, value: info.attachments))
+            }
+            if letterhead.showLeftLines {
+                ForEach(Array(letterhead.leftLines.enumerated()), id: \.offset) { _, text in
+                    if !text.isBlank { infoText(text) }
+                }
+            }
         }
+        .multilineTextAlignment(.trailing)
+        .fixedSize(horizontal: true, vertical: false)
+    }
+
+    private var infoIsEmpty: Bool {
+        let hasCustom = letterhead.showLeftLines && letterhead.leftLines.contains { !$0.isBlank }
+        return info.isEmpty && !hasCustom && !letterhead.showHeaderNumber && !letterhead.showHeaderAttachments
+    }
+
+    private func line(label: String, value: String) -> String {
+        value.isBlank ? label : "\(label) \(value)"
     }
 
     private func headerText(_ value: String, size: Double) -> some View {
@@ -118,11 +193,36 @@ struct LetterheadView: View {
             .fixedSize(horizontal: false, vertical: true)
     }
 
-    private func textAlignment(for alignment: HorizontalAlignment) -> TextAlignment {
-        switch alignment {
-        case .center:  return .center
-        case .leading: return .leading
-        default:       return .trailing
+    private func infoText(_ value: String) -> some View {
+        Text(value)
+            .font(ArabicFonts.font(letterhead.headerFontName, size: letterhead.sectionFontSize))
+            .foregroundStyle(letterhead.textColor)
+            .fixedSize(horizontal: false, vertical: true)
+    }
+
+    // MARK: المحاذاة
+
+    private var stackAlignment: HorizontalAlignment {
+        switch letterhead.headerAlignment {
+        case .right:  return .leading     // RTL: يمين
+        case .center: return .center
+        case .left:   return .trailing    // RTL: يسار
+        }
+    }
+
+    private var blockFrameAlignment: Alignment {
+        switch letterhead.headerAlignment {
+        case .right:  return .leading
+        case .center: return .center
+        case .left:   return .trailing
+        }
+    }
+
+    private var textAlignment: TextAlignment {
+        switch letterhead.headerAlignment {
+        case .right:  return .leading
+        case .center: return .center
+        case .left:   return .trailing
         }
     }
 }
@@ -158,14 +258,14 @@ struct ReportBlockView: View {
                     .foregroundStyle(letterhead.accentColor)
                 Spacer(minLength: 0)
             }
-            .frame(width: width, alignment: .trailing)
+            .frame(width: width, alignment: .leading)
             .padding(.top, 4)
 
         case .meta(let rows):
             MetaTableView(rows: rows, letterhead: letterhead, width: width)
 
         case .paragraph(let label, let text):
-            VStack(alignment: .trailing, spacing: 3) {
+            VStack(alignment: .leading, spacing: 3) {
                 if !label.isBlank {
                     Text(label)
                         .font(bodyFont(bold: true))
@@ -175,11 +275,12 @@ struct ReportBlockView: View {
                 Text(text)
                     .font(bodyFont())
                     .foregroundStyle(letterhead.textColor)
-                    .multilineTextAlignment(.trailing)
+                    .multilineTextAlignment(.leading)
                     .lineSpacing(3)
                     .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .frame(width: width, alignment: .trailing)
+            .frame(width: width, alignment: .leading)
 
         case .question(let number, let item):
             QuestionBlockView(
@@ -223,8 +324,8 @@ struct MetaTableView: View {
                         .font(font(bold: true))
                         .fontWeight(.bold)
                         .foregroundStyle(letterhead.textColor)
-                        .frame(width: labelWidth, alignment: .trailing)
-                        .padding(.horizontal, 6)
+                        .frame(width: labelWidth, alignment: .leading)
+                        .padding(.horizontal, 8)
                         .padding(.vertical, 5)
                         .background(letterhead.accentColor.opacity(0.08))
 
@@ -235,8 +336,8 @@ struct MetaTableView: View {
                     Text(row.value)
                         .font(font())
                         .foregroundStyle(letterhead.textColor)
-                        .frame(maxWidth: .infinity, alignment: .trailing)
-                        .padding(.horizontal, 6)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 8)
                         .padding(.vertical, 5)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -255,14 +356,14 @@ struct MetaTableView: View {
         )
     }
 
-    private var labelWidth: CGFloat { min(120, width * 0.26) }
+    private var labelWidth: CGFloat { min(130, width * 0.28) }
 
     private func font(bold: Bool = false) -> Font {
         ArabicFonts.font(letterhead.bodyFontName, size: letterhead.bodyFontSize, bold: bold)
     }
 }
 
-// MARK: - سؤال وجوابه
+// MARK: - سؤال وجوابه (السؤال يمين، والجواب تحته)
 
 struct QuestionBlockView: View {
 
@@ -272,14 +373,14 @@ struct QuestionBlockView: View {
     let width: CGFloat
 
     var body: some View {
-        VStack(alignment: .trailing, spacing: 5) {
+        VStack(alignment: .leading, spacing: 5) {
             Text(questionLine)
                 .font(font(bold: true))
                 .fontWeight(.bold)
                 .foregroundStyle(letterhead.textColor)
-                .multilineTextAlignment(.trailing)
+                .multilineTextAlignment(.leading)
                 .fixedSize(horizontal: false, vertical: true)
-                .frame(maxWidth: .infinity, alignment: .trailing)
+                .frame(maxWidth: .infinity, alignment: .leading)
 
             if !answerText.isBlank {
                 labeledLine(label: answerLabel, value: answerText, highlight: true)
@@ -290,7 +391,7 @@ struct QuestionBlockView: View {
             }
         }
         .padding(8)
-        .frame(width: width, alignment: .trailing)
+        .frame(width: width, alignment: .leading)
         .background(Color.white)
         .overlay(
             RoundedRectangle(cornerRadius: 4)
@@ -322,11 +423,11 @@ struct QuestionBlockView: View {
             Text(value)
                 .font(font())
                 .foregroundStyle(letterhead.textColor)
-                .multilineTextAlignment(.trailing)
+                .multilineTextAlignment(.leading)
                 .fixedSize(horizontal: false, vertical: true)
             Spacer(minLength: 0)
         }
-        .frame(maxWidth: .infinity, alignment: .trailing)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private func font(bold: Bool = false) -> Font {

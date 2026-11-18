@@ -138,6 +138,10 @@ extension QuestionTemplate {
 extension LetterheadSettings {
     enum CodingKeys: String, CodingKey {
         case layout
+        case headerAlignment, headerOffsetX, headerOffsetY
+        case showHeaderDate, headerDateLabel
+        case showHeaderNumber, headerNumberLabel, headerNumberValue
+        case showHeaderAttachments, headerAttachmentsLabel, headerAttachmentsValue
         case showKingdomLine, kingdomLine
         case showMinistry, ministry
         case showAdministration, administration
@@ -165,6 +169,19 @@ extension LetterheadSettings {
         self.init()
 
         layout = container.value(.layout, fallback.layout)
+
+        headerAlignment = container.value(.headerAlignment, fallback.headerAlignment)
+        headerOffsetX = container.value(.headerOffsetX, fallback.headerOffsetX)
+        headerOffsetY = container.value(.headerOffsetY, fallback.headerOffsetY)
+
+        showHeaderDate = container.value(.showHeaderDate, fallback.showHeaderDate)
+        headerDateLabel = container.value(.headerDateLabel, fallback.headerDateLabel)
+        showHeaderNumber = container.value(.showHeaderNumber, fallback.showHeaderNumber)
+        headerNumberLabel = container.value(.headerNumberLabel, fallback.headerNumberLabel)
+        headerNumberValue = container.value(.headerNumberValue, fallback.headerNumberValue)
+        showHeaderAttachments = container.value(.showHeaderAttachments, fallback.showHeaderAttachments)
+        headerAttachmentsLabel = container.value(.headerAttachmentsLabel, fallback.headerAttachmentsLabel)
+        headerAttachmentsValue = container.value(.headerAttachmentsValue, fallback.headerAttachmentsValue)
 
         showKingdomLine = container.value(.showKingdomLine, fallback.showKingdomLine)
         kingdomLine = container.value(.kingdomLine, fallback.kingdomLine)

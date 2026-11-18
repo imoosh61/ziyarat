@@ -21,6 +21,23 @@ enum LetterheadLayout: String, Codable, CaseIterable, Identifiable {
     }
 }
 
+/// مكان كتلة نصوص الترويسة على الورقة.
+enum HeaderTextAlignment: String, Codable, CaseIterable, Identifiable {
+    case right
+    case center
+    case left
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .right:  return "يمين الصفحة"
+        case .center: return "الوسط"
+        case .left:   return "يسار الصفحة"
+        }
+    }
+}
+
 /// شكل إطار الصفحة.
 enum PageBorderStyle: String, Codable, CaseIterable, Identifiable {
     case none
@@ -60,6 +77,21 @@ struct LetterheadSettings: Codable, Hashable {
 
     // MARK: الترويسة
     var layout: LetterheadLayout = .threeColumns
+
+    /// مكان كتلة النصوص (يمين / وسط / يسار) مع إزاحة دقيقة.
+    var headerAlignment: HeaderTextAlignment = .right
+    var headerOffsetX: Double = 0
+    var headerOffsetY: Double = 0
+
+    // أعلى يسار الصفحة: التاريخ والرقم والمشفوعات
+    var showHeaderDate: Bool = true
+    var headerDateLabel: String = "التاريخ:"
+    var showHeaderNumber: Bool = false
+    var headerNumberLabel: String = "الرقم:"
+    var headerNumberValue: String = ""
+    var showHeaderAttachments: Bool = false
+    var headerAttachmentsLabel: String = "المشفوعات:"
+    var headerAttachmentsValue: String = ""
 
     var showKingdomLine: Bool = true
     var kingdomLine: String = "المملكة العربية السعودية"
