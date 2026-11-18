@@ -30,12 +30,10 @@ final class AppStore: ObservableObject {
     func load() {
         do {
             visits = try storage.load([Visit].self, from: Files.visits) ?? []
-            templates = try storage.load([QuestionTemplate].self, from: Files.templates)
-                ?? QuestionTemplate.starterTemplates
+            templates = try storage.load([QuestionTemplate].self, from: Files.templates) ?? []
             letterhead = try storage.load(LetterheadSettings.self, from: Files.letterhead) ?? .default
         } catch let appError as AppError {
             error = appError
-            if templates.isEmpty { templates = QuestionTemplate.starterTemplates }
         } catch {
             self.error = .load(error.localizedDescription)
         }
@@ -291,34 +289,5 @@ final class AppStore: ObservableObject {
     func resetLetterhead() {
         letterhead = .default
         scheduleSave()
-    }
-}
-
-// MARK: - نماذج جاهزة تظهر عند أول تشغيل
-
-extension QuestionTemplate {
-    static var starterTemplates: [QuestionTemplate] {
-        [
-            QuestionTemplate(
-                name: "زيارة إشرافية — عامة",
-                notes: "نموذج مبدئي يمكن تعديله بالكامل.",
-                questions: [
-                    Question(text: "الالتزام بمواعيد العمل الرسمية", kind: .choice),
-                    Question(text: "تهيئة بيئة العمل ونظافتها", kind: .choice),
-                    Question(text: "توفّر الخطة التنفيذية وتحديثها", kind: .choice),
-                    Question(text: "الاحتفاظ بالسجلات والملفات المطلوبة", kind: .choice),
-                    Question(text: "أبرز الملاحظات الميدانية", kind: .text),
-                    Question(text: "التقدير العام للزيارة", kind: .rating)
-                ]
-            ),
-            QuestionTemplate(
-                name: "متابعة توصيات زيارة سابقة",
-                questions: [
-                    Question(text: "تم تنفيذ توصيات الزيارة السابقة", kind: .choice),
-                    Question(text: "التوصيات التي لم تُنفّذ وأسبابها", kind: .text),
-                    Question(text: "الجوانب التي تحسّنت منذ الزيارة الأخيرة", kind: .text)
-                ]
-            )
-        ]
     }
 }

@@ -8,6 +8,7 @@ struct VisitEditorView: View {
     @State private var questionFormMode: QuestionFormMode?
     @State private var showingPreview = false
     @State private var showingSaveTemplate = false
+    @State private var showingClearConfirm = false
     @State private var templateName = ""
 
     private var visitBinding: Binding<Visit> { store.binding(for: visitID) }
@@ -37,6 +38,14 @@ struct VisitEditorView: View {
                     } label: {
                         Label("معاينة وتصدير PDF", systemImage: "doc.richtext")
                     }
+                    if !visitBinding.wrappedValue.items.isEmpty {
+                        Divider()
+                        Button(role: .destructive) {
+                            showingClearConfirm = true
+                        } label: {
+                            Label("حذف كل الأسئلة", systemImage: "trash")
+                        }
+                    }
                 } label: {
                     Image(systemName: "ellipsis.circle")
                 }
@@ -50,6 +59,14 @@ struct VisitEditorView: View {
         }
         .sheet(isPresented: $showingPreview) {
             ReportPreviewView(visitID: visitID)
+        }
+        .confirmationDialog(
+            "حذف كل أسئلة هذه الزيارة؟",
+            isPresented: $showingClearConfirm,
+            titleVisibility: .visible
+        ) {
+            Button("حذف الكل", role: .destructive) { clearAllQuestions() }
+            Button("إلغاء", role: .cancel) {}
         }
         .alert("حفظ كنموذج", isPresented: $showingSaveTemplate) {
             TextField("اسم النموذج", text: $templateName)
@@ -117,6 +134,9 @@ struct VisitEditorView: View {
                     item: $item,
                     onEditQuestion: {
                         questionFormMode = .edit(itemID: item.id, question: item.question)
+                    },
+                    onDeleteQuestion: {
+                        deleteItem(id: item.id)
                     }
                 )
             }
@@ -250,6 +270,27 @@ struct VisitEditorView: View {
                     .filter { question.options.contains($0) }
             }
         }
+        visitBinding.wrappedValue = visit
+    }
+
+    private func deleteItem(id: UUID) {
+        var visit = visitBinding.wrappedValue
+        if let item = visit.items.first(where: { $0.id == id }) {
+            for photo in item.answer.photos {
+                store.removePhoto(photo, from: visitID, itemID: id)
+            }
+        }
+        visit = visitBinding.wrappedValue
+        visit.items.removeAll { $0.id == id }
+        visitBinding.wrappedValue = visit
+    }
+
+    private func clearAllQuestions() {
+        var visit = visitBinding.wrappedValue
+        let ids = visit.items.map(\.id)
+        for id in ids { deleteItem(id: id) }
+        visit = visitBinding.wrappedValue
+        visit.items.removeAll()
         visitBinding.wrappedValue = visit
     }
 

@@ -6,6 +6,9 @@ struct QuestionCardView: View {
     let visitID: UUID
     @Binding var item: VisitItem
     let onEditQuestion: () -> Void
+    let onDeleteQuestion: () -> Void
+
+    @State private var showingDeleteConfirm = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -51,13 +54,33 @@ struct QuestionCardView: View {
                 .foregroundStyle(.secondary)
             }
 
-            Button {
-                onEditQuestion()
+            Menu {
+                Button {
+                    onEditQuestion()
+                } label: {
+                    Label("تعديل السؤال", systemImage: "square.and.pencil")
+                }
+                Button(role: .destructive) {
+                    showingDeleteConfirm = true
+                } label: {
+                    Label("حذف السؤال", systemImage: "trash")
+                }
             } label: {
-                Image(systemName: "square.and.pencil")
+                Image(systemName: "ellipsis.circle")
+                    .font(.title3)
             }
             .buttonStyle(.plain)
             .foregroundStyle(.tint)
+            .confirmationDialog(
+                "حذف هذا السؤال؟",
+                isPresented: $showingDeleteConfirm,
+                titleVisibility: .visible
+            ) {
+                Button("حذف", role: .destructive) { onDeleteQuestion() }
+                Button("إلغاء", role: .cancel) {}
+            } message: {
+                Text("سيُحذف السؤال مع جوابه وملاحظته وصوره.")
+            }
         }
     }
 
